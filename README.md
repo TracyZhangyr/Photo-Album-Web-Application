@@ -1,8 +1,8 @@
 # Photo-Album-Web-Application
 
-#### a. Team Members:
+#### Team Members:
 
-Yuerong Zhang (UNI: yz4143),
+Yuerong Zhang (UNI: yz4143), 
 Jincheng Xu (UNI: jx2467)
 
 
