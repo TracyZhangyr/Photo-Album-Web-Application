@@ -1,5 +1,8 @@
 # Photo-Album-Web-Application
 
-Names: Jincheng Xu, Yuerong Zhang
-UNIs: jx2467, yz4143
+#### a. Team Members:
+
+Yuerong Zhang (UNI: yz4143),
+Jincheng Xu (UNI: jx2467)
+
 
