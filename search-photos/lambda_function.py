@@ -1,30 +1,18 @@
 import json
 import boto3
 import logging
-from datetime import datetime
+import inflect
 from opensearchpy import OpenSearch, RequestsHttpConnection
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-def detect_labels(photo, bucket):
+def search_photos(keywords):
     """
-    Use Rekognition to detect labels from the photo
+    Search photos using OpenSearch with keywords
     """
-    client = boto3.client('rekognition')
-    response = client.detect_labels(Image={'S3Object': {'Bucket': bucket, 'Name': photo}},
-                                    MaxLabels=10)
-    labels = [label['Name'].lower() for label in response['Labels']]
-
-    return labels
-
-
-def OpenSearch_store(json_array):
-    """
-    Store a JSON object in an OpenSearch index ('photos')
-    """
-
+    results = []
     auth = ('master', '6998Cloud!')
     host = 'search-photos-ay6fh2jbnsmcv2md3hdxqt4z24.us-east-1.es.amazonaws.com'
 
@@ -36,52 +24,75 @@ def OpenSearch_store(json_array):
         connection_class=RequestsHttpConnection
     )
 
-    response = client.index(
-        index='photos',
-        doc_type='_doc',
-        body=json.dumps(json_array).encode('utf-8'),
-        refresh=True)
+    query = {
+        'size': 1000,
+        'query': {
+            'match': {
+                'labels': " ".join(keywords)
+            }
+        }
+    }
 
-    logger.debug("OpenSearch response: ", response)
+    response = client.search(
+        body=query,
+        index='photos'
+    )
+    logger.debug(response)
 
-    return response
+    # get url and labels for each photo from OpenSearch response
+    photo_list = response['hits']['hits']
+    for photo in photo_list:
+        objectKey = photo['_source']['objectKey']
+        labels = photo['_source']['labels']
+        photo_url = "https://cc-photos-bucket.s3.amazonaws.com/" + objectKey
+        photo_info = {'url': photo_url, 'labels': labels}
+        results.append(photo_info)
+
+    return results
+
+
+def get_valid_keywords(response):
+    """
+    Get valid keywords from Lex response, and convert words from plural to singular
+    """
+    keywords = []
+    p = inflect.engine()
+    for _, word in response['slots'].items():
+        if word:
+            # convert words from plural to singular if applicable
+            singular_word = p.singular_noun(word.lower())
+            if singular_word:
+                keywords.append(singular_word)
+
+    return keywords
 
 
 def lambda_handler(event, context):
     """
     main handler of events
     """
-    # Get s3 bucket and key from the event
-    s3 = boto3.client('s3')
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = event['Records'][0]['s3']['object']['key']
+    # get the search query q from user
+    query = event['queryStringParameters']['q']
 
-    # get detection labels from Rekognition
-    labels = detect_labels(key, bucket)
+    # get keywords from the query using Lex
+    client = boto3.client('lex-runtime')
+    response = client.post_text(botName='SearchPhotos',
+                                botAlias='SearchPhotosBot',
+                                userId='testuser',
+                                inputText=query)
+    logger.info("Lex response: ", response)
 
-    logger.debug("Labels detected: " + ', '.join(labels))
+    # get valid keywords from Lex response
+    keywords = get_valid_keywords(response)
+    logger.info(keywords)
 
-    # get custom labels from users if applicable
-    try:
-        metadata = s3.head_object(Bucket=bucket, Key=key)
-        custom_labels = metadata['ResponseMetadata']['HTTPHeaders']['x-amz-meta-customLabels']
-        if custom_labels:
-            labels += [label.strip().lower() for label in custom_labels.split(',')]
-    except Exception as e:
-        logger.debug("No custom labels.")
-
-    # create a JSON array (A1) with the labels
-    json_array = {
-        'objectKey': key,
-        'bucket': bucket,
-        'createdTimestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'labels': labels
-    }
-
-    # store the JSON object in OpenSearch
-    response = OpenSearch_store(json_array)
+    # search photos using OpenSearch with keywords
+    results = []
+    results += search_photos(keywords)
+    logger.info(results)
 
     return {
         'statusCode': 200,
-        'body': 'Finished indexing LF1.'
+        'body': json.dumps({'results': results}),
+        # TODO: headers
     }
