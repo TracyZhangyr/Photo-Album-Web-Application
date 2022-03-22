@@ -1,6 +1,8 @@
 import json
 import boto3
 import logging
+import time
+import os
 from datetime import datetime
 from opensearchpy import OpenSearch, RequestsHttpConnection
 
@@ -51,6 +53,10 @@ def lambda_handler(event, context):
     """
     main handler of events
     """
+    # set the default time zone
+    os.environ['TZ'] = 'America/New_York'
+    time.tzset()
+
     # Get s3 bucket and key from the event
     s3 = boto3.client('s3')
     bucket = event['Records'][0]['s3']['bucket']['name']
