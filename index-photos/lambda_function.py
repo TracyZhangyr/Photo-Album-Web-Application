@@ -90,4 +90,5 @@ def lambda_handler(event, context):
     return {
         'statusCode': 200,
         'body': 'Finished indexing LF1.'
+        # TODO: headers
     }
