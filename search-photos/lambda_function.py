@@ -60,9 +60,12 @@ def get_valid_keywords(response):
     for _, word in response['slots'].items():
         if word:
             # convert words from plural to singular if applicable
-            singular_word = p.singular_noun(word.lower())
+            word = word.lower()
+            singular_word = p.singular_noun(word)
             if singular_word:
                 keywords.append(singular_word)
+            else:
+                keywords.append(word)
 
     return keywords
 

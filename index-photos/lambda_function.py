@@ -22,7 +22,7 @@ def detect_labels(photo, bucket):
     return labels
 
 
-def OpenSearch_store(json_array):
+def OpenSearch_store(json_array, key):
     """
     Store a JSON object in an OpenSearch index ('photos')
     """
@@ -41,6 +41,7 @@ def OpenSearch_store(json_array):
     response = client.index(
         index='photos',
         doc_type='_doc',
+        id=key,
         body=json.dumps(json_array).encode('utf-8'),
         refresh=True)
 
@@ -85,10 +86,9 @@ def lambda_handler(event, context):
     }
 
     # store the JSON object in OpenSearch
-    response = OpenSearch_store(json_array)
+    response = OpenSearch_store(json_array, key)
 
     return {
         'statusCode': 200,
         'body': 'Finished indexing LF1.'
-        # TODO: headers
     }
