@@ -71,7 +71,9 @@ def lambda_handler(event, context):
     # get custom labels from users if applicable
     try:
         metadata = s3.head_object(Bucket=bucket, Key=key)
-        custom_labels = metadata['ResponseMetadata']['HTTPHeaders']['x-amz-meta-customLabels']
+        logger.info(metadata)
+        custom_labels = metadata['ResponseMetadata']['HTTPHeaders']['x-amz-meta-customlabels']
+        logger.info(custom_labels)
         if custom_labels:
             labels += [label.strip().lower() for label in custom_labels.split(',')]
     except Exception as e:
@@ -90,5 +92,10 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': 'Finished indexing LF1.'
+        'body': 'Finished indexing LF1.',
+        'headers': {
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,PUT',
+        }
     }
