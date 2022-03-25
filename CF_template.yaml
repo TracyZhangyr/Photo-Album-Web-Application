@@ -15,7 +15,7 @@ Resources:
       Handler: indexPhotoFunctional.lambda_handler
       Role: 'arn:aws:iam::414199463068:role/cloudformation-role'
       Timeout: 30
-      Runtime: python3.6
+      Runtime: python3.9
       FunctionName: indexPhotoFunctional
   searchPhotos:
     Type: 'AWS::Lambda::Function'
@@ -31,7 +31,7 @@ Resources:
       Handler: searchPhotosFunctional.lambda_handler
       Role: 'arn:aws:iam::414199463068:role/cloudformation-role'
       Timeout: 30
-      Runtime: python3.6
+      Runtime: python3.9
       FunctionName: searchPhotosFunctional
   ServerlessRestApiDeploymentb2888a1f04:
     Type: 'AWS::ApiGateway::Deployment'
@@ -84,4 +84,9 @@ Resources:
     Properties:
       DomainName: es-photos
       ClusterConfig:
-        InstanceType: m3.medium.search
+        InstanceType: t3.small.search
+        InstanceCount: 1
+      EBSOptions:
+        EBSEnabled: True
+        VolumeType: gp2
+        VolumeSize: 10
