@@ -5,5 +5,3 @@
 Yuerong Zhang (UNI: yz4143), 
 Jincheng Xu (UNI: jx2467)
 
-#### S3 frontend URL:
-
